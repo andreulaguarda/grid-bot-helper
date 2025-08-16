@@ -11,10 +11,3 @@ Route::get('/', function () {
         'selectedCoins' => $selectedCoins['data'] ?? []
     ]);
 });
-
-Route::prefix('api')->group(function () {
-    Route::get('/coins', [CoinGeckoController::class, 'getTop100Coins']);
-    Route::get('/selected-coins', [CoinGeckoController::class, 'getSelectedCoins']);
-    Route::post('/selected-coins', [CoinGeckoController::class, 'updateSelectedCoins']);
-    Route::get('/search-coins', [CoinGeckoController::class, 'searchCoins']);
-});

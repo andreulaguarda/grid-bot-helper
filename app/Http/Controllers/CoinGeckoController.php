@@ -167,23 +167,37 @@ class CoinGeckoController extends Controller
     {
         try {
             $coins = $request->input('coins', []);
+            $action = $request->input('action', 'toggle'); // 'toggle', 'activate', 'deactivate'
             
-            // Desactivar todas las monedas
-            SelectedCryptocurrency::query()->update(['is_active' => false]);
-            
+            if (empty($coins)) {
+                return ['error' => 'No coins provided', 'message' => 'Please provide at least one coin'];
+            }
+
             foreach ($coins as $coin) {
-                SelectedCryptocurrency::updateOrCreate(
-                    ['coin_id' => $coin['id']],
-                    [
+                $selectedCoin = SelectedCryptocurrency::where('coin_id', $coin['id'])->first();
+                
+                if ($selectedCoin) {
+                    // Si la moneda existe, invertir su estado
+                    $selectedCoin->update([
+                        'is_active' => !$selectedCoin->is_active
+                    ]);
+                } else {
+                    // Si la moneda no existe, crearla como activa
+                    SelectedCryptocurrency::create([
+                        'coin_id' => $coin['id'],
                         'name' => $coin['name'],
                         'symbol' => $coin['symbol'],
                         'is_active' => true
-                    ]
-                );
+                    ]);
+                }
             }
+
+            // Limpiar el caché para que los cambios se reflejen inmediatamente
+            Cache::forget('coingecko_prices');
 
             return ['success' => true, 'message' => 'Cryptocurrencies updated successfully'];
         } catch (\Exception $e) {
+            \Log::error('Error en updateSelectedCoins: ' . $e->getMessage());
             return ['error' => 'Could not update selected coins', 'message' => $e->getMessage()];
         }
     }
