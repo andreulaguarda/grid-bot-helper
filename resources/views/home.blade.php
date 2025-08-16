@@ -23,15 +23,15 @@
                         <th class="py-3 px-6 text-left text-gray-500 font-semibold tracking-wider border-b border-gray-700">
                             <div class="flex items-center space-x-2">
                                 <span>Cryptocurrency</span>
-                                <button id="addCryptoBtn" class="bg-blue-600 hover:bg-blue-700 text-white rounded-md flex items-center justify-center w-8 h-8">
-                                    <i class="fas fa-plus"></i>
+                                <button id="addCryptoBtn" class="bg-gray-700 hover:bg-blue-600 text-white rounded-md flex items-center justify-center w-8 h-8 cursor-pointer">
+                                    <i class="fas fa-gear"></i>
                                 </button>
                             </div>
                         </th>
                         <th class="py-3 px-6 text-left text-gray-500 font-semibold tracking-wider border-b border-gray-700">24h Change (%)</th>
                         <th class="py-3 px-6 text-left text-gray-500 font-semibold tracking-wider border-b border-gray-700">
                             <label for="liquidation-select" class="text-gray-500">Liquidation:</label>
-                            <select id="liquidation-select" class="bg-gray-700 text-white rounded-md p-2">
+                            <select id="liquidation-select" class="bg-gray-700 hover:bg-gray-600 text-white rounded-md p-2 cursor-pointer">
                                 @for ($i = -5; $i >= -50; $i -= 5)
                                 <option value="{{ $i }}" @if ($i==-40) selected @endif>{{ $i }}%</option>
                                 @endfor
@@ -39,7 +39,7 @@
                         </th>
                         <th class="py-3 px-6 text-left text-gray-500 font-semibold tracking-wider border-b border-gray-700">
                             <label for="low-select" class="text-gray-500">Low:</label>
-                            <select id="low-select" class="bg-gray-700 text-white rounded-md p-2">
+                            <select id="low-select" class="bg-gray-700 hover:bg-gray-600 text-white rounded-md p-2 cursor-pointer">
                                 @for ($i = -5; $i >= -50; $i -= 5)
                                 <option value="{{ $i }}" @if ($i==-30) selected @endif>{{ $i }}%</option>
                                 @endfor
@@ -48,7 +48,7 @@
                         <th class="py-3 px-6 text-left text-gray-500 font-semibold tracking-wider border-b border-gray-700">Current Price</th>
                         <th class="py-3 px-6 text-left text-gray-500 font-semibold tracking-wider border-b border-gray-700">
                             <label for="high-select" class="text-gray-500">High:</label>
-                            <select id="high-select" class="bg-gray-700 text-white rounded-md p-2">
+                            <select id="high-select" class="bg-gray-700 hover:bg-gray-600 text-white rounded-md p-2 cursor-pointer">
                                 @for ($i = 5; $i <= 100; $i +=5)
                                     <option value="{{ $i }}" @if ($i==30) selected @endif>{{ $i }}%</option>
                                     @endfor
