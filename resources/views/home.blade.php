@@ -183,44 +183,131 @@
                 });
             }
 
+            // Función para crear fetch con timeout
+            function fetchWithTimeout(url, options = {}, timeout = 10000) {
+                return Promise.race([
+                    fetch(url, options),
+                    new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('Request timeout')), timeout)
+                    )
+                ]);
+            }
+
             // Función para cargar las criptomonedas principales
             async function loadTopCryptos() {
+                // Validar que cryptoList existe
+                if (!cryptoList) {
+                    console.error('cryptoList element not found');
+                    return;
+                }
+
+                // Mostrar estado de carga
+                cryptoList.innerHTML = '<div class="p-4 text-gray-400 flex items-center justify-center"><div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mr-2"></div>Loading cryptocurrencies...</div>';
+
                 try {
-                    // Cargar monedas seleccionadas primero
-                    const selectedResponse = await fetch('/api/selected-coins');
-                    if (!selectedResponse.ok) throw new Error('Error fetching selected coins');
+                    // Cargar monedas seleccionadas primero con timeout
+                    const selectedResponse = await fetchWithTimeout('/api/selected-coins', {}, 8000);
+                    if (!selectedResponse.ok) {
+                        throw new Error(`Error fetching selected coins: ${selectedResponse.status}`);
+                    }
                     const selectedData = await selectedResponse.json();
+                    
+                    // Validar estructura de respuesta
+                    if (!selectedData || typeof selectedData !== 'object') {
+                        throw new Error('Invalid response format for selected coins');
+                    }
+                    
                     const selectedCoins = selectedData.data || [];
                     console.log('Pre-loaded selected coins:', selectedCoins);
 
-                    const response = await fetch('/api/coins');
+                    // Cargar todas las monedas disponibles con timeout
+                    const response = await fetchWithTimeout('/api/coins', {}, 8000);
                     if (!response.ok) {
-                        throw new Error(`Error HTTP: ${response.status}`);
+                        throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
                     }
+                    
                     const coins = await response.json();
+                    
+                    // Validar que coins es un array
+                    if (!Array.isArray(coins)) {
+                        throw new Error('Invalid response format: coins is not an array');
+                    }
+                    
                     console.log('Loaded all available coins:', coins.length);
 
+                    // Validar que selectedCoins es un array
+                    if (!Array.isArray(selectedCoins)) {
+                        console.warn('selectedCoins is not an array, using empty array');
+                        selectedCoins = [];
+                    }
+
                     // Marcar las monedas seleccionadas
-                    const selectedIds = selectedCoins.map(coin => coin.coin_id);
+                    const selectedIds = selectedCoins.map(coin => {
+                        if (coin && coin.coin_id) {
+                            return coin.coin_id;
+                        }
+                        console.warn('Invalid selected coin data:', coin);
+                        return null;
+                    }).filter(id => id !== null);
+                    
                     console.log('Selected coin IDs:', selectedIds);
 
                     displayCryptoList(coins, selectedIds);
                 } catch (error) {
                     console.error('Error loading cryptocurrencies:', error);
-                    cryptoList.innerHTML = `<div class="p-4 text-red-500">Error loading cryptocurrencies: ${error.message}</div>`;
+                    
+                    let errorMessage = 'Error loading cryptocurrencies';
+                    if (error.message === 'Request timeout') {
+                        errorMessage = 'Request timeout - please check your connection and try again';
+                    } else if (error.message.includes('fetch')) {
+                        errorMessage = 'Network error - please check your connection';
+                    } else {
+                        errorMessage = `Error: ${error.message}`;
+                    }
+                    
+                    if (cryptoList) {
+                        cryptoList.innerHTML = `
+                            <div class="p-4 text-red-500 text-center">
+                                <div class="mb-2">${errorMessage}</div>
+                                <button onclick="loadTopCryptos()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
+                                    Retry
+                                </button>
+                            </div>
+                        `;
+                    }
                 }
             }
 
             // Función para obtener las monedas seleccionadas
             async function getSelectedCoins() {
                 try {
-                    const response = await fetch('/api/selected-coins');
-                    if (!response.ok) throw new Error('Error fetching selected coins');
+                    const response = await fetchWithTimeout('/api/selected-coins', {}, 8000);
+                    if (!response.ok) {
+                        throw new Error(`Error fetching selected coins: ${response.status} - ${response.statusText}`);
+                    }
                     const data = await response.json();
+                    
+                    // Validar estructura de respuesta
+                    if (!data || typeof data !== 'object') {
+                        console.warn('Invalid response format for selected coins, using empty array');
+                        return [];
+                    }
+                    
                     console.log('Selected coins:', data); // Depuración
-                    return data.data || [];
+                    
+                    // Validar que data.data es un array
+                    const selectedCoins = data.data || [];
+                    if (!Array.isArray(selectedCoins)) {
+                        console.warn('Selected coins data is not an array, using empty array');
+                        return [];
+                    }
+                    
+                    return selectedCoins;
                 } catch (error) {
                     console.error('Error getting selected coins:', error);
+                    if (error.message === 'Request timeout') {
+                        console.warn('Timeout getting selected coins, using empty array');
+                    }
                     return [];
                 }
             }
@@ -228,36 +315,75 @@
             // Función para mostrar la lista de criptomonedas
             async function displayCryptoList(coins, selectedIds) {
                 try {
+                    // Validar que cryptoList existe
+                    if (!cryptoList) {
+                        console.error('cryptoList element not found');
+                        return;
+                    }
+
+                    // Validar que coins es un array válido
+                    if (!Array.isArray(coins)) {
+                        console.error('coins is not a valid array:', coins);
+                        cryptoList.innerHTML = '<div class="p-4 text-red-500">Error: Invalid coins data</div>';
+                        return;
+                    }
+
+                    // Validar que selectedIds es un array válido
+                    if (!Array.isArray(selectedIds)) {
+                        console.warn('selectedIds is not a valid array, using empty array');
+                        selectedIds = [];
+                    }
+
                     console.log('All coins:', coins); // Depuración
                     console.log('Selected IDs:', selectedIds); // Depuración
 
+                    if (coins.length === 0) {
+                        cryptoList.innerHTML = '<div class="p-4 text-gray-400">No cryptocurrencies available</div>';
+                        return;
+                    }
+
                     cryptoList.innerHTML = coins.map(coin => {
+                        // Validar que cada coin tiene las propiedades necesarias
+                        if (!coin || !coin.id || !coin.name || !coin.symbol) {
+                            console.warn('Invalid coin data:', coin);
+                            return '';
+                        }
+
                         const isSelected = selectedIds.includes(coin.id);
                         console.log(`Processing coin ${coin.id}, selected: ${isSelected}`); // Depuración adicional
+                        
+                        // Escapar caracteres especiales para evitar errores de JSON
+                        const coinData = {
+                            id: coin.id,
+                            name: coin.name,
+                            symbol: coin.symbol,
+                            image: coin.image || ''
+                        };
+                        
                         return `
                             <div class="flex items-center justify-between p-3 hover:bg-gray-700 rounded-md">
                                 <div class="flex items-center space-x-3">
-                                    <img src="${coin.image}" alt="${coin.name}" class="w-8 h-8">
+                                    <img src="${coin.image || ''}" alt="${coin.name}" class="w-8 h-8" onerror="this.style.display='none'">
                                     <div>
                                         <div class="font-medium">${coin.name}</div>
                                         <div class="text-sm text-gray-400">${coin.symbol.toUpperCase()}</div>
                                     </div>
                                 </div>
                                 <label class="relative inline-flex items-center cursor-pointer toggle-crypto"
-                                    data-coin='${JSON.stringify({id: coin.id, name: coin.name, symbol: coin.symbol, image: coin.image})}'
+                                    data-coin='${JSON.stringify(coinData)}'
                                     data-selected='${isSelected}'>
                                     <input type="checkbox" class="sr-only peer" ${isSelected ? 'checked' : ''}>
                                     <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
                                 </label>
                             </div>
                         `;
-                    }).join('');
+                    }).filter(html => html !== '').join('');
                 } catch (error) {
                     console.error('Error displaying crypto list:', error);
-                    cryptoList.innerHTML = '<div class="p-4 text-red-500">Error al cargar la lista de criptomonedas</div>';
+                    if (cryptoList) {
+                        cryptoList.innerHTML = '<div class="p-4 text-red-500">Error al cargar la lista de criptomonedas</div>';
+                    }
                 }
-
-
             }
 
 
@@ -278,9 +404,36 @@
             });
 
             // Función para cerrar modal y recargar
-            document.getElementById('saveChanges').addEventListener('click', () => {
-                cryptoModal.classList.add('hidden');
-                window.location.reload();
+            document.getElementById('saveChanges').addEventListener('click', async () => {
+                try {
+                    const selectedCoins = await getSelectedCoins();
+                    if (selectedCoins.length === 0) {
+                        // Si no hay monedas seleccionadas, activa BTC y ETH por defecto
+                        await fetch('/api/selected-coins', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                coins: [{
+                                    id: 'bitcoin',
+                                    name: 'Bitcoin',
+                                    symbol: 'BTC'
+                                }, {
+                                    id: 'ethereum',
+                                    name: 'Ethereum',
+                                    symbol: 'ETH'
+                                }]
+                            })
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error saving default coins:', error);
+                } finally {
+                    cryptoModal.classList.add('hidden');
+                    window.location.reload();
+                }
             });
 
             // Función para desactivar todas las criptomonedas
