@@ -16,6 +16,15 @@
         <h1 class="text-4xl font-bold text-center mb-2">Grid Bot Helper</h1>
         <h2 class="text-1xl text-gray-500 text-center mb-6">Cryptocurrency grid bot trading price levels</h2>
 
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-75 hidden items-center justify-center z-50">
+            <div class="bg-gray-800 p-8 rounded-lg text-center">
+                <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                <p class="text-white text-lg font-medium">Updating data...</p>
+                <p class="text-gray-400 text-sm mt-2">Please wait while cryptocurrencies are loading</p>
+            </div>
+        </div>
+
         <div class="overflow-x-auto rounded-md overflow-hidden border border-gray-700">
             <table id="crypto-prices-table" class="min-w-full bg-gray-900 text-sm font-sans">
                 <thead>
@@ -94,7 +103,7 @@
         </div>
     </div>
 
-    <!-- Modal de criptomonedas -->
+    <!-- Cryptocurrency Modal -->
     <div id="cryptoModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center">
         <div class="bg-gray-800 p-6 rounded-lg w-full max-w-2xl mx-4">
             <div class="flex justify-between items-center mb-4">
@@ -108,8 +117,8 @@
             </div>
             <div class="flex justify-between">
                 <button id="resetToDefaults" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md cursor-pointer">
-                            DEACTIVATE ALL
-                </button>
+                DEACTIVATE ALL
+            </button>
                 <button id="saveChanges" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md cursor-pointer">
                     OK
                 </button>
@@ -118,13 +127,33 @@
     </div>
 
     <script>
+        // Mostrar overlay de carga al inicio
+        window.addEventListener('beforeunload', () => {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            if (loadingOverlay) {
+                loadingOverlay.classList.remove('hidden');
+                loadingOverlay.classList.add('flex');
+            }
+        });
+        
+        // Ocultar overlay cuando la página esté completamente cargada
+        window.addEventListener('load', () => {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            if (loadingOverlay) {
+                setTimeout(() => {
+                    loadingOverlay.classList.add('hidden');
+                    loadingOverlay.classList.remove('flex');
+                }, 500); // Pequeño delay para suavizar la transición
+            }
+        });
+        
         document.addEventListener('DOMContentLoaded', function() {
             const addCryptoBtn = document.getElementById('addCryptoBtn');
             const cryptoModal = document.getElementById('cryptoModal');
             const closeModal = document.getElementById('closeModal');
             const cryptoList = document.getElementById('cryptoList');
 
-            // Función para manejar el toggle de criptomonedas usando delegación de eventos
+            // Function to handle cryptocurrency toggle using event delegation
             function setupCryptoToggleHandler() {
                 const cryptoList = document.getElementById('cryptoList');
                 if (!cryptoList) {
@@ -132,7 +161,7 @@
                     return;
                 }
 
-                // Evitar listeners duplicados
+                // Avoid duplicate listeners
                 if (cryptoList._toggleHandlerAttached) return;
                 cryptoList._toggleHandlerAttached = true;
 
@@ -193,9 +222,9 @@
                 ]);
             }
 
-            // Función para cargar las criptomonedas principales
+            // Function to load main cryptocurrencies
             async function loadTopCryptos() {
-                // Validar que cryptoList existe
+                // Validate that cryptoList exists
                 if (!cryptoList) {
                     console.error('cryptoList element not found');
                     return;
@@ -205,14 +234,14 @@
                 cryptoList.innerHTML = '<div class="p-4 text-gray-400 flex items-center justify-center"><div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mr-2"></div>Loading cryptocurrencies...</div>';
 
                 try {
-                    // Cargar monedas seleccionadas primero con timeout
+                    // Load selected coins first with timeout
                     const selectedResponse = await fetchWithTimeout('/api/selected-coins', {}, 8000);
                     if (!selectedResponse.ok) {
                         throw new Error(`Error fetching selected coins: ${selectedResponse.status}`);
                     }
                     const selectedData = await selectedResponse.json();
                     
-                    // Validar estructura de respuesta
+                    // Validate response structure
                     if (!selectedData || typeof selectedData !== 'object') {
                         throw new Error('Invalid response format for selected coins');
                     }
@@ -220,7 +249,7 @@
                     const selectedCoins = selectedData.data || [];
                     console.log('Pre-loaded selected coins:', selectedCoins);
 
-                    // Cargar todas las monedas disponibles con timeout
+                    // Load all available coins with timeout
                     const response = await fetchWithTimeout('/api/coins', {}, 8000);
                     if (!response.ok) {
                         throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
@@ -228,20 +257,20 @@
                     
                     const coins = await response.json();
                     
-                    // Validar que coins es un array
+                    // Validate that coins is an array
                     if (!Array.isArray(coins)) {
                         throw new Error('Invalid response format: coins is not an array');
                     }
                     
                     console.log('Loaded all available coins:', coins.length);
 
-                    // Validar que selectedCoins es un array
+                    // Validate that selectedCoins is an array
                     if (!Array.isArray(selectedCoins)) {
                         console.warn('selectedCoins is not an array, using empty array');
                         selectedCoins = [];
                     }
 
-                    // Marcar las monedas seleccionadas
+                    // Mark selected coins
                     const selectedIds = selectedCoins.map(coin => {
                         if (coin && coin.coin_id) {
                             return coin.coin_id;
@@ -278,7 +307,7 @@
                 }
             }
 
-            // Función para obtener las monedas seleccionadas
+            // Function to get selected coins
             async function getSelectedCoins() {
                 try {
                     const response = await fetchWithTimeout('/api/selected-coins', {}, 8000);
@@ -287,15 +316,15 @@
                     }
                     const data = await response.json();
                     
-                    // Validar estructura de respuesta
+                    // Validate response structure
                     if (!data || typeof data !== 'object') {
                         console.warn('Invalid response format for selected coins, using empty array');
                         return [];
                     }
                     
-                    console.log('Selected coins:', data); // Depuración
+                    console.log('Selected coins:', data); // Debug
                     
-                    // Validar que data.data es un array
+                    // Validate that data.data is an array
                     const selectedCoins = data.data || [];
                     if (!Array.isArray(selectedCoins)) {
                         console.warn('Selected coins data is not an array, using empty array');
@@ -312,47 +341,54 @@
                 }
             }
 
-            // Función para mostrar la lista de criptomonedas
+            // Function to display cryptocurrency list
             async function displayCryptoList(coins, selectedIds) {
                 try {
-                    // Validar que cryptoList existe
+                    // Validate that cryptoList exists
                     if (!cryptoList) {
                         console.error('cryptoList element not found');
                         return;
                     }
 
-                    // Validar que coins es un array válido
+                    // Validate that coins is a valid array
                     if (!Array.isArray(coins)) {
                         console.error('coins is not a valid array:', coins);
                         cryptoList.innerHTML = '<div class="p-4 text-red-500">Error: Invalid coins data</div>';
                         return;
                     }
 
-                    // Validar que selectedIds es un array válido
+                    // Validate that selectedIds is a valid array
                     if (!Array.isArray(selectedIds)) {
                         console.warn('selectedIds is not a valid array, using empty array');
                         selectedIds = [];
                     }
 
-                    console.log('All coins:', coins); // Depuración
-                    console.log('Selected IDs:', selectedIds); // Depuración
+                    console.log('All coins:', coins); // Debug
+                     console.log('Selected IDs:', selectedIds); // Debug
 
                     if (coins.length === 0) {
-                        cryptoList.innerHTML = '<div class="p-4 text-gray-400">No cryptocurrencies available</div>';
+                        cryptoList.innerHTML = `
+                            <div class="p-4 text-center">
+                                <div class="text-gray-400 mb-4">No cryptocurrencies available</div>
+                                <button onclick="retryLoadCryptos()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md cursor-pointer transition-colors">
+                                    <i class="fas fa-redo mr-2"></i>Try Again
+                                </button>
+                            </div>
+                        `;
                         return;
                     }
 
                     cryptoList.innerHTML = coins.map(coin => {
-                        // Validar que cada coin tiene las propiedades necesarias
+                        // Validate that each coin has the necessary properties
                         if (!coin || !coin.id || !coin.name || !coin.symbol) {
                             console.warn('Invalid coin data:', coin);
                             return '';
                         }
 
                         const isSelected = selectedIds.includes(coin.id);
-                        console.log(`Processing coin ${coin.id}, selected: ${isSelected}`); // Depuración adicional
+                        console.log(`Processing coin ${coin.id}, selected: ${isSelected}`); // Additional debug
                         
-                        // Escapar caracteres especiales para evitar errores de JSON
+                        // Escape special characters to avoid JSON errors
                         const coinData = {
                             id: coin.id,
                             name: coin.name,
@@ -381,7 +417,7 @@
                 } catch (error) {
                     console.error('Error displaying crypto list:', error);
                     if (cryptoList) {
-                        cryptoList.innerHTML = '<div class="p-4 text-red-500">Error al cargar la lista de criptomonedas</div>';
+                        cryptoList.innerHTML = '<div class="p-4 text-red-500">Error loading cryptocurrency list</div>';
                     }
                 }
             }
@@ -393,7 +429,7 @@
                 cryptoModal.classList.remove('hidden');
                 cryptoModal.classList.add('flex');
                 loadTopCryptos();
-                setupCryptoToggleHandler(); // Configurar el manejador de eventos
+                setupCryptoToggleHandler(); // Set up event handler
             });
 
             // Función para cerrar el modal
@@ -403,12 +439,12 @@
                 cryptoList.innerHTML = '<div class="p-4 text-gray-400">Loading cryptocurrencies...</div>';
             });
 
-            // Función para cerrar modal y recargar
+            // Function to close modal and reload
             document.getElementById('saveChanges').addEventListener('click', async () => {
                 try {
                     const selectedCoins = await getSelectedCoins();
                     if (selectedCoins.length === 0) {
-                        // Si no hay monedas seleccionadas, activa BTC y ETH por defecto
+                        // If no coins are selected, activate BTC and ETH by default
                         await fetch('/api/selected-coins', {
                             method: 'POST',
                             headers: {
@@ -431,21 +467,29 @@
                 } catch (error) {
                     console.error('Error saving default coins:', error);
                 } finally {
+                    // Cerrar modal y mostrar overlay de carga
                     cryptoModal.classList.add('hidden');
-                    window.location.reload();
+                    const loadingOverlay = document.getElementById('loadingOverlay');
+                    loadingOverlay.classList.remove('hidden');
+                    loadingOverlay.classList.add('flex');
+                    
+                    // Small delay so the overlay is visible before reload
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 100);
                 }
             });
 
-            // Función para desactivar todas las criptomonedas
+            // Function to deactivate all cryptocurrencies
             document.getElementById('resetToDefaults').addEventListener('click', async () => {
                 try {
-                    // Obtener todas las monedas seleccionadas actualmente
+                    // Get all currently selected coins
                     const selectedResponse = await fetch('/api/selected-coins');
                     if (!selectedResponse.ok) throw new Error('Error fetching selected coins');
                     const selectedData = await selectedResponse.json();
                     const currentSelected = selectedData.data || [];
                     
-                    // Desactivar todas las monedas seleccionadas
+                    // Deactivate all selected coins
                     for (const coin of currentSelected) {
                         await fetch('/api/selected-coins', {
                             method: 'POST',
@@ -463,14 +507,14 @@
                         });
                     }
                     
-                    // Recargar la lista de criptomonedas en el modal
+                    // Reload cryptocurrency list in modal
                     loadTopCryptos();
                     
                     console.log('Reset completed: All cryptocurrencies have been deactivated');
                     
                 } catch (error) {
                     console.error('Error during reset:', error);
-                    alert('Error al resetear las criptomonedas. Por favor, inténtalo de nuevo.');
+                    alert('Error resetting cryptocurrencies. Please try again.');
                 }
             });
 
@@ -537,7 +581,7 @@
                             // Cambiar el botón a rojo y mostrar animación
                             button.classList.add('animate-pulse');
                             
-                            // Recargar la página después de un breve retraso
+                            // Reload page after a brief delay
                             setTimeout(() => {
                                 window.location.reload();
                             }, 500);
@@ -547,9 +591,69 @@
                     }
                 });
             });
-        });
-    </script>
 
-</body>
+            // Function to retry loading cryptocurrencies
+                window.retryLoadCryptos = function() {
+                    const cryptoList = document.getElementById('cryptoList');
+                    if (cryptoList) {
+                        cryptoList.innerHTML = '<div class="p-4 text-gray-400 flex items-center justify-center"><div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mr-2"></div>Retrying...</div>';
+                        
+                        // Retry loading after a short delay
+                        setTimeout(() => {
+                            loadTopCryptos();
+                        }, 1000);
+                    }
+                };
 
+                // Auto-retry mechanism for failed loads
+                let retryCount = 0;
+                const maxRetries = 3;
+                const originalLoadTopCryptos = loadTopCryptos;
+                
+                loadTopCryptos = async function() {
+                    try {
+                        await originalLoadTopCryptos();
+                        retryCount = 0; // Reset retry count on success
+                    } catch (error) {
+                        console.error('Error loading cryptocurrencies, attempt:', retryCount + 1);
+                        
+                        if (retryCount < maxRetries) {
+                            retryCount++;
+                            const cryptoList = document.getElementById('cryptoList');
+                            if (cryptoList) {
+                                cryptoList.innerHTML = `
+                                    <div class="p-4 text-center">
+                                        <div class="text-yellow-400 mb-2">Connection failed. Retrying automatically...</div>
+                                        <div class="text-gray-400 text-sm mb-4">Attempt ${retryCount} of ${maxRetries}</div>
+                                        <div class="flex items-center justify-center">
+                                            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-yellow-500"></div>
+                                        </div>
+                                    </div>
+                                `;
+                            }
+                            
+                            // Auto-retry after delay (increasing delay with each retry)
+                            setTimeout(() => {
+                                loadTopCryptos();
+                            }, 2000 * retryCount);
+                        } else {
+                            // Max retries reached, show manual retry option
+                            const cryptoList = document.getElementById('cryptoList');
+                            if (cryptoList) {
+                                cryptoList.innerHTML = `
+                                    <div class="p-4 text-center">
+                                        <div class="text-red-400 mb-2">Failed to load cryptocurrencies</div>
+                                        <div class="text-gray-400 text-sm mb-4">Please check your connection and try again</div>
+                                        <button onclick="retryCount = 0; retryLoadCryptos()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md cursor-pointer transition-colors">
+                                            <i class="fas fa-redo mr-2"></i>Try Again
+                                        </button>
+                                    </div>
+                                `;
+                            }
+                        }
+                    }
+                };
+            });
+        </script>
+    </body>
 </html>
