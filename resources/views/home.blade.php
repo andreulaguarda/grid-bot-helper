@@ -106,7 +106,10 @@
             <div id="cryptoList" class="max-h-96 overflow-y-auto mb-4">
                 <div class="p-4 text-gray-400">Loading cryptocurrencies...</div>
             </div>
-            <div class="flex justify-end">
+            <div class="flex justify-between">
+                <button id="resetToDefaults" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md cursor-pointer">
+                            DEACTIVATE ALL
+                </button>
                 <button id="saveChanges" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md cursor-pointer">
                     OK
                 </button>
@@ -278,6 +281,44 @@
             document.getElementById('saveChanges').addEventListener('click', () => {
                 cryptoModal.classList.add('hidden');
                 window.location.reload();
+            });
+
+            // Función para desactivar todas las criptomonedas
+            document.getElementById('resetToDefaults').addEventListener('click', async () => {
+                try {
+                    // Obtener todas las monedas seleccionadas actualmente
+                    const selectedResponse = await fetch('/api/selected-coins');
+                    if (!selectedResponse.ok) throw new Error('Error fetching selected coins');
+                    const selectedData = await selectedResponse.json();
+                    const currentSelected = selectedData.data || [];
+                    
+                    // Desactivar todas las monedas seleccionadas
+                    for (const coin of currentSelected) {
+                        await fetch('/api/selected-coins', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({ 
+                                coins: [{
+                                    id: coin.coin_id,
+                                    name: coin.name,
+                                    symbol: coin.symbol
+                                }]
+                            })
+                        });
+                    }
+                    
+                    // Recargar la lista de criptomonedas en el modal
+                    loadTopCryptos();
+                    
+                    console.log('Reset completed: All cryptocurrencies have been deactivated');
+                    
+                } catch (error) {
+                    console.error('Error during reset:', error);
+                    alert('Error al resetear las criptomonedas. Por favor, inténtalo de nuevo.');
+                }
             });
 
             // Cerrar modal al hacer clic fuera
