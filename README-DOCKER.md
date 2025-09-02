@@ -12,24 +12,36 @@ Esta guía te ayudará a desplegar la aplicación Grid Bot Helper usando Docker,
 
 ### 1. Clonar el repositorio
 ```bash
-git clone <tu-repositorio-url>
+git clone https://github.com/tu-usuario/grid-bot-helper.git
 cd grid-bot-helper
 ```
 
 ### 2. Configurar variables de entorno
 ```bash
-# Copiar archivo de ejemplo
-cp .env.example .env
-
-# Editar configuración (opcional)
-nano .env
+cp .env.docker .env
 ```
 
 ### 3. Construir y ejecutar
+
+**Opción A: Usando el script automatizado (Recomendado)**
+
+En Linux/Mac:
 ```bash
-# Construir la imagen y ejecutar el contenedor
-docker-compose up -d --build
+chmod +x build-docker.sh
+./build-docker.sh
 ```
+
+En Windows (PowerShell):
+```powershell
+.\build-docker.ps1
+```
+
+**Opción B: Comandos manuales**
+```bash
+docker compose up -d --build
+```
+
+> **Nota:** Durante la construcción verás advertencias de `debconf` como "unable to initialize frontend". Estas son normales y no afectan el funcionamiento de la aplicación.
 
 ### 4. Verificar el despliegue
 ```bash
@@ -110,6 +122,28 @@ docker-compose --profile nginx up -d
 ```
 
 ## 🔍 Solución de Problemas
+
+### Problema: Advertencias de debconf durante la construcción
+**Síntomas:** Mensajes como "debconf: unable to initialize frontend: Dialog" o "falling back to frontend: Noninteractive"
+
+**Solución:** Estas advertencias son normales y no afectan el funcionamiento. El Dockerfile ya está configurado para manejarlas automáticamente con:
+```dockerfile
+ENV DEBIAN_FRONTEND=noninteractive
+ENV DEBCONF_NONINTERACTIVE_SEEN=true
+```
+
+### Problema: Advertencia "version is obsolete" en docker-compose
+**Síntomas:** Mensaje "the attribute `version` is obsolete, it will be ignored"
+
+**Solución:** ✅ **Ya corregido** - La línea `version` ha sido eliminada del docker-compose.yml ya que es obsoleta en las versiones modernas de Docker Compose.
+
+### Problema: La construcción se queda "estancada"
+**Síntomas:** El proceso parece detenerse durante la instalación de paquetes
+
+**Solución:** 
+1. El proceso continúa en segundo plano, ten paciencia
+2. Usa el script automatizado que proporciona mejor feedback
+3. Si realmente se detiene, cancela con `Ctrl+C` y vuelve a intentar
 
 ### Problema: El contenedor no inicia
 ```bash

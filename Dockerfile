@@ -1,8 +1,12 @@
 # Usar PHP 8.2 con Apache
 FROM php:8.2-apache
 
-# Instalar dependencias del sistema
-RUN apt-get update && apt-get install -y \
+# Configurar variables de entorno para evitar advertencias de debconf
+ENV DEBIAN_FRONTEND=noninteractive
+ENV DEBCONF_NONINTERACTIVE_SEEN=true
+
+# Instalar dependencias del sistema de forma silenciosa
+RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
     libpng-dev \
@@ -13,10 +17,10 @@ RUN apt-get update && apt-get install -y \
     nodejs \
     npm \
     sqlite3 \
-    libsqlite3-dev
-
-# Limpiar caché de apt
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+    libsqlite3-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /tmp/* /var/tmp/*
 
 # Instalar extensiones de PHP
 RUN docker-php-ext-install pdo_mysql pdo_sqlite mbstring exif pcntl bcmath gd
@@ -35,16 +39,16 @@ WORKDIR /var/www/html
 COPY composer.json composer.lock package.json package-lock.json ./
 
 # Instalar dependencias de PHP
-RUN composer install --no-dev --optimize-autoloader --no-scripts
+RUN composer install --no-dev --optimize-autoloader --no-scripts --quiet
 
 # Instalar dependencias de Node.js
-RUN npm ci --only=production
+RUN npm ci --only=production --silent
 
 # Copiar el resto de la aplicación
 COPY . .
 
 # Compilar assets
-RUN npm run build
+RUN npm run build --silent
 
 # Configurar permisos
 RUN chown -R www-data:www-data /var/www/html \

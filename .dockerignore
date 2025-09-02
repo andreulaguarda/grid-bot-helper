@@ -3,18 +3,36 @@
 .gitignore
 .gitattributes
 
-# Node modules
+# Node modules y cache
 node_modules
 npm-debug.log
 yarn-error.log
+.npm
+.yarn
 
 # Composer
 vendor
 
 # Environment files
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+!.env.docker
+
+# Laravel specific
+storage/app/*
+!storage/app/.gitkeep
+storage/framework/cache/*
+!storage/framework/cache/.gitkeep
+storage/framework/sessions/*
+!storage/framework/sessions/.gitkeep
+storage/framework/views/*
+!storage/framework/views/.gitkeep
+storage/logs/*
+!storage/logs/.gitkeep
+bootstrap/cache/*
+!bootstrap/cache/.gitkeep
+database/database.sqlite
 
 # IDE files
 .vscode
@@ -27,45 +45,28 @@ vendor
 .DS_Store
 Thumbs.db
 
-# Laravel specific
-storage/app/*
-storage/framework/cache/*
-storage/framework/sessions/*
-storage/framework/views/*
-storage/logs/*
-bootstrap/cache/*
-
-# Keep important directories but ignore their contents
-!storage/app/.gitignore
-!storage/framework/.gitignore
-!storage/framework/cache/.gitignore
-!storage/framework/sessions/.gitignore
-!storage/framework/views/.gitignore
-!storage/logs/.gitignore
-!bootstrap/cache/.gitignore
-
 # Testing
+.phpunit.result.cache
 tests
 phpunit.xml
-.phpunit.result.cache
 
 # Documentation
-README.md
 *.md
+!README.md
 
-# Docker files (to avoid recursion)
-Dockerfile
-docker-compose.yml
+# Docker files (no necesarios en la imagen)
+Dockerfile*
+docker-compose*.yml
 .dockerignore
 
 # Build artifacts
-public/build
 public/hot
 public/storage
+public/build
+public/mix-manifest.json
 
-# Temporary files
+# Archivos temporales
+tmp
+temp
 *.tmp
-*.temp
-
-# Database
-database/database.sqlite
+*.log
