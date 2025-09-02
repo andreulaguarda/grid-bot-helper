@@ -1,57 +1,46 @@
-# Usar PHP 8.2 con Apache
+# Etapa de construcción de assets
+FROM node:latest as node-builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --silent
+COPY . .
+RUN npm run build --silent
+
+# Etapa de construcción de PHP
+FROM composer:latest as composer-builder
+WORKDIR /app
+COPY composer.* ./
+RUN composer install --no-dev --optimize-autoloader --no-scripts --quiet
+
+# Imagen final
 FROM php:8.2-apache
 
-# Configurar variables de entorno para evitar advertencias de debconf
+# Configurar variables de entorno
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DEBCONF_NONINTERACTIVE_SEEN=true
 
-# Instalar dependencias del sistema de forma silenciosa
+# Instalar dependencias del sistema
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git \
-    curl \
+    sqlite3 \
+    libsqlite3-dev \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
-    zip \
-    unzip \
-    nodejs \
-    npm \
-    sqlite3 \
-    libsqlite3-dev \
+    && docker-php-ext-install pdo_mysql pdo_sqlite mbstring exif pcntl bcmath gd \
+    && a2enmod rewrite \
+    && sed -i 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /tmp/* /var/tmp/*
-
-# Instalar extensiones de PHP
-RUN docker-php-ext-install pdo_mysql pdo_sqlite mbstring exif pcntl bcmath gd
-
-# Instalar Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-# Configurar Apache
-RUN a2enmod rewrite
-RUN sed -i 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Establecer directorio de trabajo
 WORKDIR /var/www/html
 
-# Copiar archivos de dependencias
-COPY composer.json composer.lock package.json package-lock.json ./
-
-# Instalar dependencias de PHP
-RUN composer install --no-dev --optimize-autoloader --no-scripts --quiet
-
-# Instalar dependencias de Node.js (incluyendo dev dependencies para build)
-RUN npm ci --silent
-
-# Copiar el resto de la aplicación
+# Copiar archivos de la aplicación
 COPY . .
 
-# Compilar assets
-RUN npm run build --silent
-
-# Limpiar dependencias de desarrollo de Node.js después del build
-RUN npm prune --production --silent
+# Copiar dependencias y assets construidos
+COPY --from=composer-builder /app/vendor ./vendor
+COPY --from=node-builder /app/public/build ./public/build
 
 # Configurar permisos
 RUN chown -R www-data:www-data /var/www/html \

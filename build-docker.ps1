@@ -14,10 +14,16 @@ try {
     Write-Host "No hay contenedores previos para limpiar" -ForegroundColor Gray
 }
 
-Write-Host "🔧 Construyendo imagen Docker..." -ForegroundColor Blue
-Write-Host "⏳ Esto puede tomar varios minutos la primera vez..." -ForegroundColor Yellow
-Write-Host "💡 Las advertencias de debconf son normales y se pueden ignorar" -ForegroundColor Cyan
-Write-Host "📝 La línea 'version' del docker-compose.yml ha sido eliminada (obsoleta)" -ForegroundColor Gray
+Write-Host "ℹ️ Información importante sobre la construcción:" -ForegroundColor Blue
+Write-Host "1. La primera construcción puede tardar varios minutos (instalación de dependencias)" -ForegroundColor Yellow
+Write-Host "2. Las reconstrucciones posteriores serán más rápidas gracias al caché de capas" -ForegroundColor Yellow
+Write-Host "3. Las advertencias de debconf son normales y no afectan al funcionamiento" -ForegroundColor Cyan
+
+# Generar certificados SSL si no existen
+if (-not (Test-Path "ssl/certificate.crt") -or -not (Test-Path "ssl/private.key")) {
+    Write-Host "🔒 Generando certificados SSL..." -ForegroundColor Yellow
+    bash ssl/generate-certs.sh
+}
 
 # Construir con progreso simple
 try {
@@ -48,8 +54,11 @@ docker compose ps
 Write-Host ""
 Write-Host "✅ ¡Despliegue completado!" -ForegroundColor Green
 Write-Host "🌐 La aplicación debería estar disponible en:" -ForegroundColor Cyan
-Write-Host "   - http://localhost:8080 (acceso local)" -ForegroundColor White
-Write-Host "   - http://[IP-DE-TU-SERVIDOR]:8080 (acceso remoto)" -ForegroundColor White
+Write-Host "   - http://localhost:8080 (acceso HTTP)" -ForegroundColor White
+Write-Host "   - https://localhost:8443 (acceso HTTPS recomendado)" -ForegroundColor White
+Write-Host "
+Nota: Al acceder por HTTPS, verás una advertencia de seguridad por el certificado autofirmado.
+Esto es normal en entornos de desarrollo." -ForegroundColor Yellow
 Write-Host ""
 Write-Host "📋 Comandos útiles:" -ForegroundColor Cyan
 Write-Host "   - Ver logs: docker compose logs -f" -ForegroundColor White

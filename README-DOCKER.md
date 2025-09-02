@@ -16,9 +16,13 @@ git clone https://github.com/tu-usuario/grid-bot-helper.git
 cd grid-bot-helper
 ```
 
-### 2. Configurar variables de entorno
+### 2. Configurar variables de entorno y SSL
 ```bash
 cp .env.docker .env
+
+# Generar certificados SSL
+chmod +x ssl/generate-certs.sh
+./ssl/generate-certs.sh
 ```
 
 ### 3. Construir y ejecutar
@@ -40,6 +44,8 @@ En Windows (PowerShell):
 ```bash
 docker compose up -d --build
 ```
+
+> **Nota:** Al acceder por HTTPS, el navegador mostrará una advertencia de seguridad por usar un certificado autofirmado. Esto es normal en entornos de desarrollo.
 
 > **Nota:** Durante la construcción verás advertencias de `debconf` como "unable to initialize frontend". Estas son normales y no afectan el funcionamiento de la aplicación.
 
@@ -123,8 +129,21 @@ docker-compose --profile nginx up -d
 
 ## 🔍 Solución de Problemas
 
+### Problema: Optimización del tiempo de construcción
+**Síntomas:** La construcción inicial tarda varios minutos
+
+**Solución:** Implementamos multi-stage builds para optimizar:
+1. Construcción de assets (Node.js)
+2. Instalación de dependencias (PHP)
+3. Imagen final ligera
+
+Beneficios:
+- Caché de capas eficiente
+- Reconstrucciones rápidas
+- Solo incluye archivos necesarios
+
 ### Problema: Advertencias de debconf durante la construcción
-**Síntomas:** Mensajes como "debconf: unable to initialize frontend: Dialog" o "falling back to frontend: Noninteractive"
+**Síntomas:** Mensajes como "debconf: unable to initialize frontend: Dialog"
 
 **Solución:** Estas advertencias son normales y no afectan el funcionamiento. El Dockerfile ya está configurado para manejarlas automáticamente con:
 ```dockerfile
@@ -132,15 +151,10 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV DEBCONF_NONINTERACTIVE_SEEN=true
 ```
 
-### Problema: Advertencia "version is obsolete" en docker-compose
-**Síntomas:** Mensaje "the attribute `version` is obsolete, it will be ignored"
-
-**Solución:** ✅ **Ya corregido** - La línea `version` ha sido eliminada del docker-compose.yml ya que es obsoleta en las versiones modernas de Docker Compose.
-
 ### Problema: Error "vite: not found" durante npm run build
 **Síntomas:** Error "sh: 1: vite: not found" durante la construcción de assets
 
-**Solución:** ✅ **Ya corregido** - El Dockerfile ahora instala todas las dependencias (incluyendo dev dependencies) para la construcción, luego las limpia con `npm prune --production` para mantener solo las necesarias en producción.
+**Solución:** ✅ **Ya corregido** - El Dockerfile usa multi-stage builds para manejar dependencias de desarrollo durante la compilación de assets.
 
 ### Problema: La construcción se queda "estancada"
 **Síntomas:** El proceso parece detenerse durante la instalación de paquetes
@@ -148,7 +162,7 @@ ENV DEBCONF_NONINTERACTIVE_SEEN=true
 **Solución:** 
 1. El proceso continúa en segundo plano, ten paciencia
 2. Usa el script automatizado que proporciona mejor feedback
-3. Si realmente se detiene, cancela con `Ctrl+C` y vuelve a intentar
+3. Las reconstrucciones posteriores serán más rápidas gracias al caché de capas
 
 ### Problema: El contenedor no inicia
 ```bash
