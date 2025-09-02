@@ -1,0 +1,71 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Node modules
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Composer
+vendor
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Laravel specific
+storage/app/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
+bootstrap/cache/*
+
+# Keep important directories but ignore their contents
+!storage/app/.gitignore
+!storage/framework/.gitignore
+!storage/framework/cache/.gitignore
+!storage/framework/sessions/.gitignore
+!storage/framework/views/.gitignore
+!storage/logs/.gitignore
+!bootstrap/cache/.gitignore
+
+# Testing
+tests
+phpunit.xml
+.phpunit.result.cache
+
+# Documentation
+README.md
+*.md
+
+# Docker files (to avoid recursion)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Build artifacts
+public/build
+public/hot
+public/storage
+
+# Temporary files
+*.tmp
+*.temp
+
+# Database
+database/database.sqlite
