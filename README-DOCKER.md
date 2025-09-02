@@ -137,6 +137,11 @@ ENV DEBCONF_NONINTERACTIVE_SEEN=true
 
 **Solución:** ✅ **Ya corregido** - La línea `version` ha sido eliminada del docker-compose.yml ya que es obsoleta en las versiones modernas de Docker Compose.
 
+### Problema: Error "vite: not found" durante npm run build
+**Síntomas:** Error "sh: 1: vite: not found" durante la construcción de assets
+
+**Solución:** ✅ **Ya corregido** - El Dockerfile ahora instala todas las dependencias (incluyendo dev dependencies) para la construcción, luego las limpia con `npm prune --production` para mantener solo las necesarias en producción.
+
 ### Problema: La construcción se queda "estancada"
 **Síntomas:** El proceso parece detenerse durante la instalación de paquetes
 

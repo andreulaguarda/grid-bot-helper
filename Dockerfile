@@ -41,14 +41,17 @@ COPY composer.json composer.lock package.json package-lock.json ./
 # Instalar dependencias de PHP
 RUN composer install --no-dev --optimize-autoloader --no-scripts --quiet
 
-# Instalar dependencias de Node.js
-RUN npm ci --only=production --silent
+# Instalar dependencias de Node.js (incluyendo dev dependencies para build)
+RUN npm ci --silent
 
 # Copiar el resto de la aplicación
 COPY . .
 
 # Compilar assets
 RUN npm run build --silent
+
+# Limpiar dependencias de desarrollo de Node.js después del build
+RUN npm prune --production --silent
 
 # Configurar permisos
 RUN chown -R www-data:www-data /var/www/html \
