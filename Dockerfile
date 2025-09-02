@@ -4,7 +4,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --silent
 COPY . .
-RUN npm run build --silent
+RUN NODE_ENV=production npm run build --silent
 
 # Etapa de construcción de PHP
 FROM composer:latest as composer-builder
