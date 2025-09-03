@@ -44,6 +44,17 @@ if ! grep -q "APP_KEY=base64:" .env; then
     echo "🔑 Clave de aplicación generada"
 fi
 
+# Crear archivo de base de datos SQLite si no existe
+echo "🗄️ Configurando base de datos SQLite..."
+if [ ! -f "database/database.sqlite" ]; then
+    touch database/database.sqlite
+    echo "📝 Archivo database.sqlite creado"
+fi
+
+# Configurar permisos para SQLite
+chown www-data:www-data database/database.sqlite
+chmod 664 database/database.sqlite
+
 # Ejecutar migraciones
 echo "🗄️ Ejecutando migraciones de base de datos..."
 php artisan migrate --force

@@ -37,10 +37,8 @@ fi
 echo "🌐 Instalando Nginx..."
 apt install -y nginx
 
-# Instalar MySQL (opcional, comentado por si ya tienes base de datos)
-# echo "🗄️ Instalando MySQL..."
-# apt install -y mysql-server
-# mysql_secure_installation
+# SQLite ya viene incluido con PHP, no necesita instalación adicional
+echo "🗄️ SQLite configurado (incluido con PHP)"
 
 # Instalar Certbot para SSL
 echo "🔒 Instalando Certbot..."
