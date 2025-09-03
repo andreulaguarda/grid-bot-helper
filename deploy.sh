@@ -52,7 +52,8 @@ if [ ! -f "database/database.sqlite" ]; then
 fi
 
 # Configurar permisos para SQLite
-chown www-data:www-data database/database.sqlite
+chown -R www-data:www-data database/
+chmod 775 database/
 chmod 664 database/database.sqlite
 
 # Ejecutar migraciones
